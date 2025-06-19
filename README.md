@@ -1,6 +1,6 @@
-# custom-printer-plugin
+# capacitor-webview-printer 
 
-use for print
+A custom Capacitor plugin providing native print functionality, allowing your web application to send HTML strings directly to the device's print manager on iOS (AirPrint) and Android (Print Spooler).
 
 ## Install
 
@@ -13,28 +13,12 @@ npx cap sync
 
 <docgen-index>
 
-* [`echo(...)`](#echo)
 * [`print(...)`](#print)
 
 </docgen-index>
 
 <docgen-api>
 <!--Update the source file JSDoc comments and rerun docgen to update the docs below-->
-
-### echo(...)
-
-```typescript
-echo(options: { value: string; }) => Promise<{ value: string; }>
-```
-
-| Param         | Type                            |
-| ------------- | ------------------------------- |
-| **`options`** | <code>{ value: string; }</code> |
-
-**Returns:** <code>Promise&lt;{ value: string; }&gt;</code>
-
---------------------
-
 
 ### print(...)
 

@@ -21,19 +21,10 @@ public class MyPrinterPlugin extends Plugin {
 
     private MyPrinter implementation = new MyPrinter();
 
-    @PluginMethod
-    public void echo(PluginCall call) {
-        String value = call.getString("value");
-
-        JSObject ret = new JSObject();
-        ret.put("value", implementation.echo(value));
-        call.resolve(ret);
-    }
-
     @PluginMethod()
     public void print(PluginCall call) {
         String html = call.getString("html");
-        String jobName = call.getString("jobName", "My Document"); // Default job name
+        String jobName = call.getString("jobName", "My Document");
 
         if (html == null || html.isEmpty()) {
             call.reject("HTML content is required.");
@@ -68,7 +59,6 @@ public class MyPrinterPlugin extends Plugin {
         }
 
         PrintDocumentAdapter printAdapter;
-        // Android 5.0+
         printAdapter = mWebView.createPrintDocumentAdapter(jobName);
 
         printManager.print(jobName, printAdapter, null);

@@ -1,9 +1,9 @@
 {
-  "name": "custom-printer-plugin",
-  "version": "0.0.1",
-  "description": "use for print",
+  "name": "capacitor-webview-printer",
+  "version": "1.0.0",
+  "description": "A custom Capacitor plugin providing native print functionality, allowing your web application to send HTML strings directly to the device's print manager on iOS (AirPrint) and Android (Print Spooler).",
   "main": "dist/plugin.cjs.js",
-  "module": "dist/esm/index.js",
+  "module": "dist/esm/indeA Capacitor plugin that enables native printing of HTML content on iOS and Android devices.x.js",
   "types": "dist/esm/index.d.ts",
   "unpkg": "dist/plugin.js",
   "files": [

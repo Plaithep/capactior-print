@@ -11,17 +11,7 @@ import WebKit // For converting HTML to printable content
 public class MyPrinterPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "MyPrinterPlugin"
     public let jsName = "MyPrinter"
-    public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "echo", returnType: CAPPluginReturnPromise)
-    ]
     private let implementation = MyPrinter()
-
-    @objc func echo(_ call: CAPPluginCall) {
-        let value = call.getString("value") ?? ""
-        call.resolve([
-            "value": implementation.echo(value)
-        ])
-    }
 
      @objc func print(_ call: CAPPluginCall) {
             guard let html = call.getString("html") else {
