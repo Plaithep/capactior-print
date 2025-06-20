@@ -2,11 +2,11 @@
 import PackageDescription
 
 let package = Package(
-    name: "CustomPrinterPlugin",
+    name: "CapacitorWebviewPrinter",
     platforms: [.iOS(.v14)],
     products: [
         .library(
-            name: "CustomPrinterPlugin",
+            name: "CapacitorWebviewPrinter",
             targets: ["MyPrinterPlugin"])
     ],
     dependencies: [

@@ -7,17 +7,34 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.print.PrintDocumentAdapter;
 import android.print.PrintManager;
 import android.content.Context;
 import android.os.Build;
+import android.util.Base64;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+
+import androidx.core.content.FileProvider;
+
+import java.io.File;
+import java.io.FileOutputStream;
 
 @CapacitorPlugin(name = "MyPrinter")
 public class MyPrinterPlugin extends Plugin {
 
     private WebView mWebView; // Keep a reference to the WebView to prevent garbage collection
+    private PrintJobCallbacks currentPrintCallbacks; // To manage callbacks for blob printing
+
+    private interface PrintJobCallbacks {
+        void resolve();
+        void reject(String message);
+    }
 
     private MyPrinter implementation = new MyPrinter();
 
@@ -118,6 +135,52 @@ public class MyPrinterPlugin extends Plugin {
                     }
                 });
             }
+
+    private void printImage(byte[] imageData, String jobName) {
+        getBridge().getActivity().runOnUiThread(() -> {
+            try {
+                Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
+                if (bitmap == null) {
+                    currentPrintCallbacks.reject("Failed to decode image data.");
+                    return;
+                }
+
+                PrintManager printManager = (PrintManager) getContext().getSystemService(Context.PRINT_SERVICE);
+                if (printManager == null) {
+                    currentPrintCallbacks.reject("Print service not available.");
+                    return;
+                }
+
+                // For images, we typically convert them to a PDF document via Canvas
+                // This is a simplified way; a more robust way would involve PrintedPdfDocument
+                // However, for direct printing via an intent, saving to a temp file is common.
+                File cachePath = new File(getContext().getCacheDir(), "images");
+                cachePath.mkdirs();
+                File tempFile = new File(cachePath, jobName.replaceAll("[^a-zA-Z0-9.-]", "_") + ".png");
+
+                try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
+                    fos.flush();
+                }
+
+                Uri uri = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", tempFile);
+
+                Intent printIntent = new Intent(Intent.ACTION_SEND); // Or ACTION_VIEW, or ACTION_SEND
+                printIntent.setType("image/png"); // Set the MIME type
+                printIntent.putExtra(Intent.EXTRA_STREAM, uri);
+                printIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+                // Start activity for result to know if user completed or cancelled
+                // You'll need to override handleOnActivityResult in your plugin
+                // For simplicity here, we resolve assuming the intent opens.
+                getBridge().getActivity().startActivity(Intent.createChooser(printIntent, jobName));
+                currentPrintCallbacks.resolve();
+
+            } catch (Exception e) {
+                currentPrintCallbacks.reject("Failed to print image: " + e.getMessage());
+            }
+        });
+    }
 
 
     private void createWebPrintJob(PluginCall call, String jobName) {
