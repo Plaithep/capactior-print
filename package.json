@@ -13,7 +13,7 @@
     "ios/Sources",
     "ios/Tests",
     "Package.swift",
-    "CustomPrinterPlugin.podspec"
+    "CapacitorWebviewPrinter.podspec"
   ],
   "author": "plaithep",
   "license": "MIT",
