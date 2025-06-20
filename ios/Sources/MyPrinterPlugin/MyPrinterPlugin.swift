@@ -45,4 +45,57 @@ public class MyPrinterPlugin: CAPPlugin, CAPBridgedPlugin {
                 }
             }
         }
+
+        @objc func printBlob(_ call: CAPPluginCall) {
+                guard let base64Data = call.getString("data"),
+                      let type = call.getString("type") else {
+                    call.reject("Data and type ('image' or 'pdf') are required for printing blob.")
+                    return
+                }
+
+                guard let decodedData = Data(base64Encoded: base64Data) else {
+                    call.reject("Failed to decode base64 data.")
+                    return
+                }
+
+                let jobName = call.getString("jobName") ?? "My Document"
+
+                DispatchQueue.main.async {
+                    self.printController = UIPrintInteractionController.shared
+
+                    let printInfo = UIPrintInfo.printInfo()
+                    printInfo.jobName = jobName
+
+                    if type == "image" {
+                        printInfo.outputType = .photo
+                        self.printController?.printingItem = UIImage(data: decodedData) // Direct image printing
+                    } else if type == "pdf" {
+                        printInfo.outputType = .general
+                        self.printController?.printingItem = decodedData // Direct PDF data printing
+                    } else {
+                        call.reject("Unsupported blob type: \(type)")
+                        self.printController = nil
+                        return
+                    }
+
+                    self.printController?.printInfo = printInfo
+
+                    guard let viewController = self.bridge?.viewController else {
+                        call.reject("Could not get a valid UIViewController for presenting print dialog.")
+                        self.printController = nil
+                        return
+                    }
+
+                    self.printController?.present(animated: true, completionHandler: { (controller, completed, error) in
+                        if completed {
+                            call.resolve()
+                        } else if let error = error {
+                            call.reject("Printing failed: \(error.localizedDescription)")
+                        } else {
+                            call.reject("Printing cancelled.")
+                        }
+                        self.printController = nil
+                    })
+                }
+        }
 }

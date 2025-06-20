@@ -49,6 +49,76 @@ public class MyPrinterPlugin extends Plugin {
         });
     }
 
+        @PluginMethod()
+        public void printBlob(PluginCall call) {
+            String base64Data = call.getString("data");
+            String type = call.getString("type"); // "image" or "pdf"
+            String jobName = call.getString("jobName", "My Document");
+
+            if (base64Data == null || base64Data.isEmpty()) {
+                call.reject("Base64 data is required for printing blob.");
+                return;
+            }
+            if (type == null || (!type.equals("image") && !type.equals("pdf"))) {
+                call.reject("Blob type must be 'image' or 'pdf'.");
+                return;
+            }
+
+            byte[] decodedBytes = Base64.decode(base64Data, Base64.DEFAULT);
+
+            // This will be used to resolve/reject the plugin call after the print intent finishes
+            currentPrintCallbacks = new PrintJobCallbacks() {
+                @Override
+                public void resolve() {
+                    call.resolve();
+                    currentPrintCallbacks = null;
+                }
+                @Override
+                public void reject(String message) {
+                    call.reject(message);
+                    currentPrintCallbacks = null;
+                }
+            };
+
+            if (type.equals("image")) {
+                printImage(decodedBytes, jobName);
+            } else if (type.equals("pdf")) {
+                printPdf(decodedBytes, jobName);
+            }
+        }
+
+            private void printPdf(byte[] pdfData, String jobName) {
+                getBridge().getActivity().runOnUiThread(() -> {
+                    try {
+                        // Save PDF to a temporary file
+                        File cachePath = new File(getContext().getCacheDir(), "pdfs");
+                        cachePath.mkdirs();
+                        File tempFile = new File(cachePath, jobName.replaceAll("[^a-zA-Z0-9.-]", "_") + ".pdf");
+
+                        try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+                            fos.write(pdfData);
+                            fos.flush();
+                        }
+
+                        // Create a content URI for the file
+                        Uri uri = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", tempFile);
+
+                        // Create an intent to view/print the PDF
+                        Intent printIntent = new Intent(Intent.ACTION_VIEW); // ACTION_VIEW works well for opening/sharing documents
+                        printIntent.setDataAndType(uri, "application/pdf");
+                        printIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        printIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY); // Optional: clear from history
+
+                        // Start activity with chooser
+                        getBridge().getActivity().startActivity(Intent.createChooser(printIntent, jobName));
+                        currentPrintCallbacks.resolve(); // Resolve assuming the intent opens
+
+                    } catch (Exception e) {
+                        currentPrintCallbacks.reject("Failed to print PDF: " + e.getMessage());
+                    }
+                });
+            }
+
 
     private void createWebPrintJob(PluginCall call, String jobName) {
         PrintManager printManager = (PrintManager) getContext().getSystemService(Context.PRINT_SERVICE);
