@@ -12,6 +12,12 @@ public class MyPrinterPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "MyPrinterPlugin"
     public let jsName = "MyPrinter"
     private let implementation = MyPrinter()
+    private var printController: UIPrintInteractionController?
+
+    public let pluginMethods: [CAPPluginMethod] = [
+         CAPPluginMethod(name: "print", returnType: CAPPluginReturnPromise),
+         CAPPluginMethod(name: "printBlob", returnType: CAPPluginReturnPromise),
+     ]
 
      @objc func print(_ call: CAPPluginCall) {
             guard let html = call.getString("html") else {
@@ -98,4 +104,4 @@ public class MyPrinterPlugin: CAPPlugin, CAPBridgedPlugin {
                     })
                 }
         }
-}
+       }
